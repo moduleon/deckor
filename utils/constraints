@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+# Check if parameters set
+function check_if_exists () {
+    if [ -z "$2" ]; then
+        error_message "$(basename $0): error: Missing parameter $1"
+        exit 1
+    fi
+}
+
+# Check if parameters
+function check_if_spaces () {
+    re="[[:space:]]+"
+    if [[ $2 =~ $re ]]; then
+        error_message "$(basename $0): error: Parameter $1 can not contain spaces"
+        exit 1
+    fi
+}

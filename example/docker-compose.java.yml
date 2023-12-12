@@ -1,0 +1,13 @@
+# Development notice
+# Run it with the following:
+# deckor alias init -f example/docker-compose.java.yml
+version: '3.4'
+services:
+  app:
+    image: amazoncorretto:17-alpine
+    volumes:
+      - ${PWD}:/app
+    working_dir: /app
+    labels:
+      - "deckor.alias.java=docker compose -f example/docker-compose.java.yml run --rm -u $(id -u):$(id -g) app java"
+      - "deckor.alias.javac=docker compose -f example/docker-compose.java.yml run --rm -u $(id -u):$(id -g) app javac"

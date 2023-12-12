@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/../utils/yaml
+
+# Parse options and args
+ACTION=""
+FILE="./docker-compose.yml"
+MET_FILE_OPT=0
+for var in "$@"
+do
+    case $var in
+        -f|--file)
+            MET_FILE_OPT=1
+        ;;
+        up)
+            ACTION="up"
+        ;;
+        down)
+            ACTION="down"
+        ;;
+        *)
+            if [ $MET_FILE_OPT == 1 ]; then
+                FILE="$var"
+                MET_FILE_OPT=0
+            fi
+        ;;
+    esac
+done
+
+# Add aliases if upping containers
+if [ $ACTION == 'up' ]; then
+    $SCRIPT_DIR/add-aliases -f $FILE --no-reload
+# Remove aliases if removing containers
+elif [ $ACTION == 'down' ]; then
+    $SCRIPT_DIR/remove-aliases -f $FILE --no-reload
+fi
+
+# Call genuine docker compose bin
+docker compose $@
+
+# Reload the current shell
+if [ $ACTION == 'up' ] || [ $ACTION == 'down' ]; then
+    exec $SHELL
+fi

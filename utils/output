@@ -1,0 +1,121 @@
+#!/bin/bash
+
+set -e
+
+# Style
+NORMAL="0"
+BOLD="1"
+DARK="2"
+ITALIC="3"
+UNDERLINED="4"
+REVERSED="7"
+HIDDEN="8"
+BARRED="9"
+
+# Color
+BLACK="30"
+RED="31"
+GREEN="32"
+YELLOW="33"
+BLUE="34"
+MAGENTA="35"
+CYAN="36"
+WHITE="37"
+
+# Background color
+BG_BLACK="40"
+BG_RED="41"
+BG_GREEN="42"
+BG_YELLOW="43"
+BG_BLUE="44"
+BG_MAGENTA="45"
+BG_CYAN="46"
+BG_WHITE="47"
+
+function write () {
+    printf "$@"
+}
+
+function write_line () {
+    write "$@"; new_line
+}
+
+function new_line () {
+    write "\n"
+}
+
+# Add styles to an output text. 
+# Does not add a new line.
+# Example: 
+#     styled_text "Hello!" $GREEN $BOLD $UNDERLINED $ITALIC
+function styled_text () {
+    MESSAGE="$1"
+    if [ -z "$MESSAGE" ]; then
+        error_message " $0: styled_text(): Message is missing"
+        exit 1
+    fi
+    shift
+
+    STYLES=''
+    while [[ $# -gt 0 ]] 
+    do
+        if [ ! -z "$STYLES" ]; then
+            STYLES="$STYLES;"
+        fi
+        STYLES="$STYLES$1"
+        shift
+    done
+
+    if [ -z "$STYLES" ]; then
+        write $MESSAGE
+    else
+        write "\e[${STYLES}m${MESSAGE}\e[0m"
+    fi
+}
+
+function styled_line () {
+    styled_text "$@"
+    new_line
+}
+
+function title () {
+    styled_text " $@ " $BG_GREEN $BOLD
+    new_line
+}
+
+function section () {
+    styled_text "$@" $YELLOW
+    new_line
+}
+
+function option () {
+    styled_text "  $1" $GREEN
+    if [ ! -z "$2" ]; then
+        write "$2"
+    fi
+    new_line
+}
+
+function success_message () {
+    styled_text "$@" $GREEN
+    new_line
+}
+
+function error_message () {
+    styled_text "$@" $RED
+    new_line
+}
+
+function 256_colored_text () {
+    printf "\e[38;5;${1}m${2}\e[0m"
+}
+
+function print_brand () {
+    256_colored_text "040" "D"
+    256_colored_text "039" "e"
+    256_colored_text "033" "c"
+    256_colored_text "025" "k"
+    256_colored_text "099" "o"
+    256_colored_text "125" "r"
+    new_line
+}

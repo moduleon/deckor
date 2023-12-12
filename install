@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+DEV=0
+for var in "$@"
+do
+    shift
+    case $var in
+        -d|--dev) DEV=1; continue;;
+        *) set -- "$@" "$var";;
+    esac
+done
+
+# Copy sources locally
+if [ -d /var/lib/deckor.io ]; then
+    rm -rf /var/lib/deckor.io
+fi
+if [ $DEV -eq 0 ]; then
+    cp -R . /var/lib/deckor.io
+fi
+
+# Remove symbolic link
+if [ -f /usr/local/bin/deckor ] || [ -L /usr/local/bin/deckor ]; then
+    rm -f /usr/local/bin/deckor
+fi
+
+# Create a brand new symbolic link
+if [ $DEV -eq 1 ]; then
+    ln -s $SCRIPT_DIR/cli /usr/local/bin/deckor
+else
+    ln -s /var/lib/deckor.io/cli /usr/local/bin/deckor
+fi

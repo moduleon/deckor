@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/../../utils/yaml
+source $SCRIPT_DIR/../../utils/output
+
+function print_help () {
+    styled_text $(basename $0) $BOLD; write_line ": Add command aliases from docker-compose configuration file for the current directory"
+    new_line
+    write_line "Usage: $(basename $0) OPTIONS"
+    new_line
+    section "Options :"
+    option "-f, --file" "       Path to the configuration file (default ./docker-compose.yml)"
+    option "-n, --no-reload" "  Don't reload the current shell (by default, yes)"
+    option "-h, --help" "       Display this help"
+}
+
+# Parse options
+RELOAD=1
+FILE="./docker-compose.yml"
+MET_FILE_OPT=0
+for var in "$@"
+do
+    case $var in
+        -h|--help)
+            print_help
+            exit 0
+        ;;
+        -f|--file)
+            MET_FILE_OPT=1
+        ;;
+        -n|--no-reload)
+            RELOAD=0
+        ;;
+        *)
+            if [ $MET_FILE_OPT == 1 ]; then
+                FILE="$var"
+                MET_FILE_OPT=0
+            fi
+        ;;
+    esac
+done
+
+# Check docker-compose config file exists
+if [ ! -f $FILE ]; then
+    error_message "$(basename $0): No configuration file found"
+    exit 1
+fi
+
+# Parse docker-compose config file
+FOUND_ALIASES=0
+ALIASES=$(parse_yaml $FILE | grep deckor.alias)
+ALIASES=$(echo $ALIASES | sed "s/\" services/\"|services/g")
+IFS='|' read -ra array <<< "$ALIASES"
+for key in "${!array[@]}"
+do
+    FOUND_ALIASES=1
+    # Extract aliases and commands to add
+    ALIAS=$(echo ${array[$key]} | sed -r "s/.*deckor\.alias\.([a-zA-Z0-9\/\-\_]+) ?[=|:]+ ?.*/\1/g")
+    COMMAND=$(echo ${array[$key]} | sed -r "s/.*deckor\.alias\.[a-zA-Z0-9\/\-\_]+ ?[=|:]+ ?['|\"]?(.*)\"/\1/g")
+    # Add them in rc file
+    $SCRIPT_DIR/add "$ALIAS" "$COMMAND"
+done
+
+# Reload current shell
+if [ $FOUND_ALIASES == 1 ] && [ $RELOAD == 1 ]; then
+    exec $SHELL
+fi

@@ -1,0 +1,12 @@
+# Development notice
+# Run it with the following:
+# deckor alias init -f example/docker-compose.go.yml
+version: '3.4'
+services:
+  app:
+    image: golang:1.21-alpine
+    volumes:
+      - ${PWD}:/app
+    working_dir: /app
+    labels:
+      - "deckor.alias.go=docker compose -f example/docker-compose.go.yml run --rm -u $(id -u):$(id -g) app go"

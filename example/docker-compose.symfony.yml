@@ -1,0 +1,20 @@
+# Development notice
+# Run it with the following:
+# deckor alias init -f example/docker-compose.symfony.yml
+version: '3.4'
+services:
+  app:
+    image: php:8.1-alpine
+    volumes:
+      - ${PWD}:/app
+    working_dir: /app
+    labels:
+      - "deckor.alias.php=docker compose -f example/docker-compose.symfony.yml run --rm -u $(id -u):$(id -g) app php"
+      - "deckor.alias.bin/console=php bin/console"
+  composer:
+    image: composer
+    volumes:
+      - ${PWD}:/app
+    working_dir: /app
+    labels:
+      - "deckor.alias.composer=docker compose -f example/docker-compose.symfony.yml run --rm -u $(id -u):$(id -g) composer composer"

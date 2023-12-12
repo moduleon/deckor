@@ -1,0 +1,13 @@
+# Development notice
+# Run it with the following:
+# deckor alias init -f example/docker-compose.python.yml
+version: '3.4'
+services:
+  app:
+    image: python:3-alpine
+    volumes:
+      - ${PWD}:/app
+    working_dir: /app
+    labels:
+      - "deckor.alias.python=docker compose -f example/docker-compose.python.yml run --rm -u $(id -u):$(id -g) app python"
+      - "deckor.alias.pip=docker compose -f example/docker-compose.python.yml run --rm -u $(id -u):$(id -g) app pip"

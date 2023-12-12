@@ -1,0 +1,44 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/../../utils/output
+
+function print_help () {
+    styled_text $(basename $0) $BOLD; write_line ": List command aliases set for the current directory"
+    new_line
+    write_line "Usage: $(basename $0) OPTIONS"
+    new_line
+    section "Options :"
+    option "-h, --help" "  Display this help"
+}
+
+# Parse options
+for var in "$@"
+do
+    shift
+    case $var in
+        -h|--help)
+            print_help
+            exit 0
+        ;;
+    esac
+done
+
+# Create rc file if missing
+SHELL_NAME=$(basename $SHELL)
+if [ ! -f ~/.${SHELL_NAME}rc ]; then
+    touch ~/.${SHELL_NAME}rc
+fi
+
+# Parse rc file
+ALIASES=$(cat ~/.${SHELL_NAME}rc |  grep -E "#[a-zA-Z0-9\/\-\_]+\-anchor\-${PWD}$");
+ALIASES=$(echo $ALIASES | sed "s/ elif/|elif/g")
+IFS='|' read -ra array <<< "$ALIASES"
+for key in "${!array[@]}"
+do
+    # Output each alias and command
+    ALIAS=$(echo ${array[$key]} | sed -r "s/.*#([a-zA-Z0-9\/\-\_]+)-anchor-.*/\1/g")
+    COMMAND=$(echo ${array[$key]} | sed -r "s/elif .*; then (.*) #+.*/\1/g" | sed 's/$@//g')
+    styled_text "$ALIAS" $GREEN; write_line ":  $COMMAND";
+done

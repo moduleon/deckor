@@ -1,0 +1,98 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/../../utils/output
+source $SCRIPT_DIR/../../utils/constraints
+
+function print_help () {
+    styled_text $(basename $0) $BOLD; write_line ": Add a command alias available for the current directory"
+    new_line
+    write_line "Usage: $(basename $0) <alias> \"<command>\""
+    write_line "   Or: $(basename $0) OPTIONS"
+    new_line
+    section "Options :"
+    option "-h, --help" "    Display this help"
+    option "-s, --silent" "  Run without output (by default, no)"
+    option "-r, --reload" "  Reload the current shell (by default, no)"
+}
+
+# No args, print help
+if [ $# -eq 0 ]; then
+    print_help
+    exit 1
+fi
+
+# Parse options
+SILENT=0
+RELOAD=0
+for var in "$@"
+do
+    shift
+    case $var in
+        -h|--help)
+            print_help
+            exit 0
+        ;;
+        -s|--silent)
+            SILENT=1
+        ;;
+        -r|--reload)
+            RELOAD=1
+        ;;
+        *)
+            set -- "$@" "$var"
+        ;;
+    esac
+done
+
+# If more than 2 arguments, it's a problem
+if [ $# -gt 2 ]; then
+    error_message "$(basename $0): error: Command with spaces must be passed between quotes"
+    exit 1
+fi
+
+# Check args
+ALIAS=$1
+check_if_exists alias $ALIAS
+check_if_spaces alias "$ALIAS"
+COMMAND=$2
+check_if_exists command $COMMAND
+
+# Create rc file if missing
+SHELL_NAME=$(basename $SHELL)
+if [ ! -f ~/.${SHELL_NAME}rc ]; then
+    touch ~/.${SHELL_NAME}rc
+fi
+
+# Add placeholding function if missing
+if [ $(grep -cF "function ${ALIAS} () {" ~/.${SHELL_NAME}rc) -eq 0 ]; then
+    echo "# Deckor command proxy for ${ALIAS}" >> ~/.${SHELL_NAME}rc
+    echo "function ${ALIAS} () {"                        >> ~/.${SHELL_NAME}rc
+    echo "  if [ 1 -eq 0 ]; then exit 1"                 >> ~/.${SHELL_NAME}rc
+    echo "  #${ALIAS}-anchor"                            >> ~/.${SHELL_NAME}rc
+    echo "  else ${SHELL_NAME} -c \"$ALIAS \$@\"; fi"    >> ~/.${SHELL_NAME}rc
+    echo "}"                                             >> ~/.${SHELL_NAME}rc
+fi
+
+# Remove directory condition if set
+$SCRIPT_DIR/rm $ALIAS --silent
+
+# Add the new condition in placeholding function
+DIR_CONDITION="elif [[ "\$PWD" == \"$PWD\" ]]; then"
+if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "s|#$ALIAS-anchor|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    sed -i "s|#$ALIAS-anchor|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
+fi
+
+if [ $SILENT -eq 0 ]; then
+    success_message "Alias '$ALIAS' successfully added for $PWD!"
+fi
+
+# Reload the current shell
+if [ $RELOAD -eq 1 ]; then
+    exec $SHELL
+fi

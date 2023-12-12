@@ -1,0 +1,93 @@
+#!/bin/bash
+
+set -e
+
+VERSION='0.0.0'
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/utils/output
+
+function print_help () {
+    print_brand
+    write_line "The evil docker twin."
+    new_line
+    write_line "Usage: $(basename $0) COMMAND [ARG]..."
+    write_line "   Or: $(basename $0) OPTIONS"
+    new_line
+    section "Commands:"
+    option "alias init" "                   Add command aliases from docker-compose configuration file for the current directory"
+    option "alias add <alias> <command>" "  Add a command alias available for the current directory"
+    option "alias rm <alias>" "             Remove command alias set for the current directory"
+    option "alias clean" "                  Remove all command aliases set for the current directory"
+    option "alias ls" "                     List command aliases set for the current directory"
+    option "compose" "                      A docker compose entrypoint handling aliases auto init and cleaning"
+    new_line
+    section "Options:"
+    option "-h, --help" "      Display this help"
+    option "-v, --version" "   Show version infos"
+}
+
+if [ $(basename $0) == "deckor-compose" ]; then
+    $SCRIPT_DIR/command/compose $@
+    exit 0;
+fi
+
+# If no args print help
+if [ $# -eq 0 ]; then
+    print_help
+    exit 0
+fi
+
+# Parse options and arguments
+while [[ $# -gt 0 ]] 
+do
+    key="$1"
+    case $key in
+        -h|--help)
+            print_help
+            exit 0
+        ;;
+        -v|--version)
+            write_line "Deckor v$VERSION"
+            exit 0
+        ;;
+        alias)
+            shift
+            key="$1"
+            if [ $key == "init" ]; then
+                shift
+                $SCRIPT_DIR/command/alias/init $@
+                exit 0
+            elif [ $key == "add" ]; then
+                shift
+                $SCRIPT_DIR/command/alias/add "$@"
+                exit 0
+            elif [ $key == "rm" ]; then
+                shift
+                $SCRIPT_DIR/command/alias/rm "$@"
+                exit 0
+            elif [ $key == "clean" ]; then
+                shift
+                $SCRIPT_DIR/command/alias/clean $@
+                exit 0
+            elif [ $key == "ls" ]; then
+                shift
+                $SCRIPT_DIR/command/alias/ls $@
+                exit 0
+            else
+                error_message "$(basename $0): Unknown argument \"$1\" for alias"
+                exit 1
+            fi
+        ;;
+        compose)
+            shift # Remove current arg
+            $SCRIPT_DIR/command/compose $@
+            exit 0;
+        ;;
+        *)
+            error_message "$(basename $0): Unknown option: $1"
+            exit 1
+        ;;
+    esac
+done

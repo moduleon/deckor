@@ -1,0 +1,54 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname $(realpath $0))"
+
+source $SCRIPT_DIR/../../utils/output
+
+function print_help () {
+    styled_text $(basename $0) $BOLD; write_line ": Remove all command aliases set for the current directory"
+    new_line
+    write_line "Usage: $(basename $0) OPTIONS"
+    new_line
+    section "Options :"
+    option "-n, --no-reload" "  Don't reload the current shell (by default, yes)"
+    option "-h, --help" "       Display this help"
+}
+
+# Parse options
+RELOAD=1
+for var in "$@"; do
+    shift
+    case $var in
+        -h|--help) 
+            print_help; exit 0
+        ;;
+        -n|--no-reload)
+            RELOAD=0
+        ;;
+    esac
+done
+
+# Create rc file if missing
+SHELL_NAME=$(basename $SHELL)
+if [ ! -f ~/.${SHELL_NAME}rc ]; then
+    touch ~/.${SHELL_NAME}rc
+fi
+
+# Parse rc file
+FOUND_ALIASES=0
+ALIASES=$(cat ~/.${SHELL_NAME}rc |  grep -E "#[a-zA-Z0-9\/\-\_]+\-anchor\-${PWD}$");
+ALIASES=$(echo $ALIASES | sed "s/ elif/|elif/g")
+IFS='|' read -ra array <<< "$ALIASES"
+for key in "${!array[@]}"
+do
+    FOUND_ALIASES=1
+    # Extract aliases to remove
+    ALIAS=$(echo ${array[$key]} | sed -r "s/.*#([a-zA-Z0-9\/\-\_]+)-anchor-.*/\1/g")
+    # Remove them from rc file
+    $SCRIPT_DIR/rm "$ALIAS" "$COMMAND"
+done
+
+# Reload current shell
+if [ $FOUND_ALIASES == 1 ] && [ $RELOAD == 1 ]; then
+    exec $SHELL
+fi
