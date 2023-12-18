@@ -33,10 +33,10 @@ done
 
 # Add aliases if upping containers
 if [ $ACTION == 'up' ]; then
-    $SCRIPT_DIR/add-aliases -f $FILE --no-reload
+    $SCRIPT_DIR/alias/init -f $FILE --no-reload
 # Remove aliases if removing containers
 elif [ $ACTION == 'down' ]; then
-    $SCRIPT_DIR/remove-aliases -f $FILE --no-reload
+    $SCRIPT_DIR/alias/clean -f $FILE --no-reload
 fi
 
 # Call genuine docker compose bin
