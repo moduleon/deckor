@@ -83,9 +83,9 @@ $SCRIPT_DIR/rm $ALIAS --silent
 # Add the new condition in placeholding function
 DIR_CONDITION="elif [[ "\$PWD" == \"$PWD\" ]]; then"
 if [ "$(uname)" == "Darwin" ]; then
-    sed -i '' "s|#$ALIAS-anchor|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
+    sed -r -i '' "s|#$ALIAS-anchor$|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    sed -i "s|#$ALIAS-anchor|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
+    sed -r -i "s|#$ALIAS-anchor$|$DIR_CONDITION $COMMAND \$@ #${ALIAS}-anchor-${PWD}\n  #$ALIAS-anchor|g" ~/.${SHELL_NAME}rc
 fi
 
 if [ $SILENT -eq 0 ]; then
